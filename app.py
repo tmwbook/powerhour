@@ -10,6 +10,8 @@ from db import User, db
 from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
 
 app = Flask(__name__)
+# :///rel/path OR :////abs/path
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database'
 app.secret_key = APP_SECRET
 
 login_manager = LoginManager()
@@ -115,5 +117,6 @@ def get_playlists():
 @app.route('/test')
 @login_required
 def play_music():
+    # spotify:track:2QyuXBcV1LJ2rq01KhreMF ON - BTS
     r = spotify.queue_song("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
     return render_template('result.html', data=r.json())
