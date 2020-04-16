@@ -120,3 +120,11 @@ def play_music():
     # spotify:track:2QyuXBcV1LJ2rq01KhreMF ON - BTS
     r = spotify.queue_song("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
     return render_template('result.html', data=r.json())
+
+
+@app.route('/test_playlist')
+@login_required
+def play_playlist():
+    # spotify:playlist:39LyZo1T7CceLqQxujIcEx Bang Bang
+    spotify.queue_playlist("39LyZo1T7CceLqQxujIcEx")
+    return redirect(url_for('index'))
