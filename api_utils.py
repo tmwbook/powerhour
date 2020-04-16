@@ -15,7 +15,8 @@ def _get(endpoint, params={}):
 
 
 def _post(endpoint, data={}):
-    return post(endpoint, headers={"Authorization": "Bearer "+current_user.access_token}, data=data)
+    # Who was the spotify dev the let data in a post be in the params??????
+    return post(endpoint, headers={"Authorization": "Bearer "+current_user.access_token}, params=data)
 
 def _refresh_tokens():
     params = {
@@ -30,7 +31,7 @@ def _refresh_tokens():
         db.session.commit()
 
 
-def api_call(func, fail):
+def api_call(func):
     def wrapper(*args, **kwargs):
         # Assume the access token works:
         r = func(*args, **kwargs)
@@ -41,6 +42,6 @@ def api_call(func, fail):
             if r.status_code in range(400, 500):
                 # Something's wrong, let's just re-auth
                 logout_user()
-                return redirect(url_for('/'))
+                return redirect(url_for('index'))
         return r
     return wrapper

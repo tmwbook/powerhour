@@ -1,13 +1,13 @@
 from urllib.parse import urlencode
 
-from flask import Flask, render_template, redirect, request, url_for
-from flask_login import LoginManager, login_required, login_user, current_user
+from flask import Flask, redirect, render_template, request, url_for
+from flask_login import LoginManager, current_user, login_required, login_user
 from requests import get, post
 
-from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
-from db import db, User
-from api_utils import API_BASE, TOKEN_ENDPOINT, OAUTH_ENDPOINT, _refresh_tokens
 import spotify
+from api_utils import API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT, _refresh_tokens
+from db import User, db
+from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
 
 app = Flask(__name__)
 app.secret_key = APP_SECRET
@@ -27,7 +27,7 @@ db.create_all()
 ### Spotify API Auth helpers
 ###############################
 
-def get_auth_url(perms=[], scopes=[]):
+def get_auth_url(scopes=[]):
     params = {
         "client_id": CLIENT_ID,
         "response_type": "code",
@@ -70,8 +70,8 @@ def auth_result():
         r = get(API_BASE+'/me', headers={"Authorization": "Bearer "+tokens["access_token"]}).json()
         local_user = User.query.filter_by(spotify_id=r['id']).first()
         if local_user:
-            local_user.access_token = ['access_token']
-            local_user.refresh_token = ['refresh_token']
+            local_user.access_token = tokens['access_token']
+            local_user.refresh_token = tokens['refresh_token']
         else:
             local_user = User(
                 spotify_id = r['id'],
@@ -83,7 +83,7 @@ def auth_result():
         login_user(local_user)
         return redirect(url_for('hello'))
     else:
-        return redirect(url_for('/'))
+        return redirect(url_for('index'))
 
 
 ###############################
@@ -109,4 +109,11 @@ def hello():
 @login_required
 def get_playlists():
     r = spotify.get_playlists()
+    return render_template('result.html', data=r.json())
+
+
+@app.route('/test')
+@login_required
+def play_music():
+    r = spotify.queue_song("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
     return render_template('result.html', data=r.json())
