@@ -2,7 +2,7 @@ from flask import redirect, url_for
 from flask_login import current_user, logout_user
 from requests import get, post
 
-from db import User, db
+from db import db
 from env import CLIENT_ID, CLIENT_SECRET
 
 API_BASE = "https://api.spotify.com/v1"
@@ -10,11 +10,15 @@ API_BASE = "https://api.spotify.com/v1"
 TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token"
 OAUTH_ENDPOINT = "https://accounts.spotify.com/authorize"
 
-def _get(endpoint, params={}):
+def _get(endpoint, params=None):
+    if not params:
+        params = {}
     return get(endpoint, headers={"Authorization": "Bearer "+current_user.access_token}, params=params)
 
 
-def _post(endpoint, data={}):
+def _post(endpoint, data=None):
+    if not params:
+        params = {}
     # Who was the spotify dev the let data in a post be in the params??????
     return post(endpoint, headers={"Authorization": "Bearer "+current_user.access_token}, params=data)
 

@@ -5,7 +5,7 @@ from flask_login import LoginManager, current_user, login_required, login_user
 from requests import get, post
 
 import spotify
-from api_utils import API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT, _refresh_tokens
+from api_utils import API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT
 from db import User, db
 from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
 
@@ -29,7 +29,9 @@ db.create_all()
 ### Spotify API Auth helpers
 ###############################
 
-def get_auth_url(scopes=[]):
+def get_auth_url(scopes=None):
+    if not scopes:
+        scopes = []
     params = {
         "client_id": CLIENT_ID,
         "response_type": "code",
