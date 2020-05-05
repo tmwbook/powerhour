@@ -126,5 +126,22 @@ def play_music():
 @login_required
 def play_playlist():
     # spotify:playlist:39LyZo1T7CceLqQxujIcEx Bang Bang
-    spotify.queue_playlist("39LyZo1T7CceLqQxujIcEx")
+    queue_playlist("39LyZo1T7CceLqQxujIcEx")
     return redirect(url_for('index'))
+
+
+###############################
+### Helpers
+###############################
+def queue_playlist(playlist_id: str):
+    """queue all songs in a playlist"""
+    # TODO(Tom): Stress test this, no idea when this will get rate limited
+    r = spotify.get_playlist(playlist_id)
+    songs = []
+    current_page = r.json()['tracks']
+    while current_page:
+        for track in current_page['items']:
+            songs.append(track['track']['uri'])
+        current_page = current_page['next']
+    for song in songs:
+        spotify.queue_song(song)
