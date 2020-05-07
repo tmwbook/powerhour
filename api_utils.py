@@ -1,6 +1,6 @@
 from flask import redirect, url_for
 from flask_login import current_user, logout_user
-from requests import get, post
+from requests import get, post, put
 
 from db import db
 from env import CLIENT_ID, CLIENT_SECRET
@@ -21,6 +21,13 @@ def _post(endpoint, data=None):
         params = {}
     # Who was the spotify dev the let data in a post be in the params??????
     return post(endpoint, headers={"Authorization": "Bearer "+current_user.access_token}, params=data)
+
+
+def _put(endpoint, params=None, data=None):
+    params = params or {}
+    data = data or {}
+    return put(endpoint, headers={"Authorization": "Bearer "+current_user.access_token}, params=params, json=data)
+
 
 def _refresh_tokens():
     params = {

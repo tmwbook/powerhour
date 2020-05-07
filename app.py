@@ -120,16 +120,23 @@ def get_playlists():
 @login_required
 def play_music():
     # spotify:track:2QyuXBcV1LJ2rq01KhreMF ON - BTS
-    r = spotify.queue_song("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
-    return render_template('result.html', data=r.json())
+    r = spotify.play_track("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
+    return redirect(url_for('hello'))
 
 
 @app.route('/test_playlist')
 @login_required
 def play_playlist():
     # spotify:playlist:39LyZo1T7CceLqQxujIcEx Bang Bang
-    queue_playlist("39LyZo1T7CceLqQxujIcEx")
-    return redirect(url_for('index'))
+    spotify.play_playlist("spotify:playlist:39LyZo1T7CceLqQxujIcEx")
+    return redirect(url_for('hello'))
+
+
+@app.route('/test_album')
+def play_album():
+    # spotify:album:6Yi4tnW7O7FUW9kK3bAUhT Play with Fire - The Reign of Kindo
+    spotify.play_album("spotify:album:6Yi4tnW7O7FUW9kK3bAUhT")
+    return redirect(url_for('hello'))
 
 
 ###############################
