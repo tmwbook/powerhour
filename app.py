@@ -5,9 +5,11 @@ from flask_login import LoginManager, current_user, login_required, login_user
 from requests import get, post
 
 import spotify
-from api_utils import API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT
+from api_utils import API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT, TokenManager
 from db import User, db
 from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
+from web_utils import (failed_api_call, query_active_token,
+                       query_refresh_token, store_refreshed_token)
 
 app = Flask(__name__)
 # :///rel/path OR :////abs/path
@@ -24,6 +26,14 @@ db.init_app(app)
 
 db.create_all()
 
+TokenManager.initialize(
+    CLIENT_ID,
+    CLIENT_SECRET,
+    query_active_token,
+    query_refresh_token,
+    store_refreshed_token,
+    failed_api_call
+)
 
 ###############################
 ### Spotify API Auth helpers

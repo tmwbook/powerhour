@@ -14,9 +14,11 @@ def queue_song(spotify_uri: str):
     _post(API_BASE+"/me/player/queue", data={"uri": spotify_uri})
     return _get(API_BASE+"/me/player")
 
+
 @api_call
 def get_playlist(playlist_id: str):
     return _get(f'{API_BASE}/playlists/{playlist_id}')
+
 
 @api_call
 def start_playback(device_id: str=None):
