@@ -4,10 +4,11 @@ from flask import Flask, redirect, render_template, request, url_for
 from flask_login import LoginManager, current_user, login_required, login_user
 from requests import get, post
 
-import spotify
-from api_utils import API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT, TokenManager
+import pyfy
 from db import User, db
 from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
+from pyfy.api_utils import (API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT,
+                            TokenManager)
 from web_utils import (failed_api_call, query_active_token,
                        query_refresh_token, store_refreshed_token)
 
@@ -122,7 +123,7 @@ def hello():
 @app.route('/playlists')
 @login_required
 def get_playlists():
-    r = spotify.get_playlists()
+    r = pyfy.get_playlists()
     return render_template('result.html', data=r.json())
 
 
@@ -130,7 +131,7 @@ def get_playlists():
 @login_required
 def play_music():
     # spotify:track:2QyuXBcV1LJ2rq01KhreMF ON - BTS
-    r = spotify.play_track("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
+    r = pyfy.play_track("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
     return redirect(url_for('hello'))
 
 
@@ -138,14 +139,14 @@ def play_music():
 @login_required
 def play_playlist():
     # spotify:playlist:39LyZo1T7CceLqQxujIcEx Bang Bang
-    spotify.play_playlist("spotify:playlist:39LyZo1T7CceLqQxujIcEx")
+    pyfy.play_playlist("spotify:playlist:39LyZo1T7CceLqQxujIcEx")
     return redirect(url_for('hello'))
 
 
 @app.route('/test_album')
 def play_album():
     # spotify:album:6Yi4tnW7O7FUW9kK3bAUhT Play with Fire - The Reign of Kindo
-    spotify.play_album("spotify:album:6Yi4tnW7O7FUW9kK3bAUhT")
+    pyfy.play_album("spotify:album:6Yi4tnW7O7FUW9kK3bAUhT")
     return redirect(url_for('hello'))
 
 
@@ -155,7 +156,7 @@ def play_album():
 def queue_playlist(playlist_id: str):
     """queue all songs in a playlist"""
     # TODO(Tom): Stress test this, no idea when this will get rate limited
-    r = spotify.get_playlist(playlist_id)
+    r = pyfy.get_playlist(playlist_id)
     songs = []
     current_page = r.json()['tracks']
     while current_page:
@@ -163,4 +164,4 @@ def queue_playlist(playlist_id: str):
             songs.append(track['track']['uri'])
         current_page = current_page['next']
     for song in songs:
-        spotify.queue_song(song)
+        pyfy.queue_song(song)

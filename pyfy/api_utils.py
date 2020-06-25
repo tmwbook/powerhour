@@ -1,6 +1,6 @@
 from requests import get, post, put
 
-from spotify_execptions import SingletonViolation, SpotifyAPIError
+from .errors import SingletonViolation, SpotifyAPIError
 
 API_BASE = "https://api.spotify.com/v1"
 
