@@ -1,5 +1,7 @@
 from requests import get, post, put
 
+from spotify_execptions import SingletonViolation, SpotifyAPIError
+
 API_BASE = "https://api.spotify.com/v1"
 
 TOKEN_ENDPOINT = "https://accounts.spotify.com/api/token"
@@ -82,7 +84,7 @@ class TokenManager():
             api_fail_callback
     ):
         if TokenManager._instance is not None:
-            raise Exception("Attepted to instantiate TokenManager when it has"
+            raise SingletonViolation("Attepted to instantiate TokenManager when it has"
                             " already been initilized. Use get_instance() instead.")
         self.client_id = client_id
         self.client_secret = client_secret
@@ -108,19 +110,39 @@ class TokenManager():
         return self.token_query_source()
 
 
-def api_call(func):
-    def wrapper(*args, **kwargs):
-        mngr = TokenManager.get_instance()
-        # Assume the access token works:
-        r = func(*args, **kwargs)
-        if r.status_code in range(400, 500):
-            # Whoops let's try that again
-            mngr.refresh_tokens()
+def api_call(expected_error_codes):
+    """
+    Wrapper to take care of potential token experations
+    
+    expected_error_code: An iterable of codes that can be reported
+        from Spotify unrelated to the token renewal.
+    """
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            mngr = TokenManager.get_instance()
+            # Assume the access token works:
             r = func(*args, **kwargs)
             if r.status_code in range(400, 500):
-                return mngr.api_fail_callback()
-        return r
-    return wrapper
+                if r.status_code in expected_error_codes:
+                    raise SpotifyAPIError(
+                        r.status_code,
+                        r.json()['message'],
+                        r.json()['reason']
+                    )
+                # Whoops let's try that again
+                mngr.refresh_tokens()
+                r = func(*args, **kwargs)
+                if r.status_code in range(400, 500):
+                    if r.status_code in expected_error_codes:
+                        raise SpotifyAPIError(
+                            r.status_code,
+                            r.json()['message'],
+                            r.json()['reason']
+                        )
+                    return mngr.api_fail_callback()
+            return r
+        return wrapper
+    return decorator
 
 
 def _get(endpoint, params=None):
