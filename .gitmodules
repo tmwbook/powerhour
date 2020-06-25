@@ -1,0 +1,3 @@
+[submodule "pyfy"]
+	path = pyfy
+	url = https://github.com/tmwbook/pyfy
