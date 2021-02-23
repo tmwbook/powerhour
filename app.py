@@ -1,14 +1,14 @@
 from urllib.parse import urlencode
 
-from flask import Flask, redirect, render_template, request, url_for
+from flask import Flask, redirect, render_template, request, url_for, wrappers
 from flask_login import LoginManager, current_user, login_required, login_user
-from requests import get, post
-
-import pyfy
-from db import User, db
-from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
 from pyfy.api_utils import (API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT,
                             TokenManager)
+from pyfy.wrappers import player, playlists
+from requests import get, post
+
+from db import User, db
+from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
 from web_utils import (failed_api_call, query_active_token,
                        query_refresh_token, store_refreshed_token)
 
@@ -49,7 +49,7 @@ def get_auth_url(scopes=None):
         "redirect_uri": REDIRECT_URL,
     }
     if scopes:
-        params['scope'] = " ".join(scope for scope in scopes)
+        params['scope'] = " ".join(scopes)
     return OAUTH_ENDPOINT+"?"+urlencode(params)
 
 
@@ -79,26 +79,22 @@ def load_user(user_id):
 
 @app.route('/login/result')
 def auth_result():
-    if request.args.get('code', None):
-        # Continue the authentication process
-        tokens = get_tokens(request.args.get('code'))
-        r = get(API_BASE+'/me', headers={"Authorization": "Bearer "+tokens["access_token"]}).json()
-        local_user = User.query.filter_by(spotify_id=r['id']).first()
-        if local_user:
-            local_user.access_token = tokens['access_token']
-            local_user.refresh_token = tokens['refresh_token']
-        else:
-            local_user = User(
-                spotify_id = r['id'],
-                access_token = tokens['access_token'],
-                refresh_token = tokens['refresh_token'],
-            )
-            db.session.add(local_user)
-        db.session.commit()
-        login_user(local_user)
-        return redirect(url_for('hello'))
+    spotify_resp = TokenManager.get_instance().handle_auth_response(request.url)
+    r = get(API_BASE+'/me', headers={"Authorization": "Bearer "+spotify_resp["access_token"]}).json()
+    local_user = User.query.filter_by(spotify_id=r['id']).first()
+    if local_user:
+        local_user.access_token = spotify_resp['access_token']
+        local_user.refresh_token = spotify_resp['refresh_token']
     else:
-        return redirect(url_for('index'))
+        local_user = User(
+            spotify_id = r['id'],
+            access_token = spotify_resp['access_token'],
+            refresh_token = spotify_resp['refresh_token'],
+        )
+        db.session.add(local_user)
+    db.session.commit()
+    login_user(local_user)
+    return redirect(url_for('hello'))
 
 
 ###############################
@@ -109,7 +105,11 @@ def index():
     if current_user.is_authenticated:
         return redirect(url_for('hello'))
     context = {
-        "spotify_auth_url": get_auth_url(SCOPES),
+        "spotify_auth_url": TokenManager.get_instance().gen_auth_url(
+            "http://localhost:3000/login/result",
+            SCOPES,
+            True
+        ),
     }
     return render_template('index.html', **context)
 
@@ -123,7 +123,7 @@ def hello():
 @app.route('/playlists')
 @login_required
 def get_playlists():
-    r = pyfy.get_playlists()
+    r = playlists.get_playlists(limit=50, offset=0)
     return render_template('result.html', data=r.json())
 
 
@@ -131,7 +131,7 @@ def get_playlists():
 @login_required
 def play_music():
     # spotify:track:2QyuXBcV1LJ2rq01KhreMF ON - BTS
-    r = pyfy.play_track("spotify:track:2QyuXBcV1LJ2rq01KhreMF")
+    r = player.start_playback(track_uris=["spotify:track:2QyuXBcV1LJ2rq01KhreMF"])
     return redirect(url_for('hello'))
 
 
@@ -139,29 +139,12 @@ def play_music():
 @login_required
 def play_playlist():
     # spotify:playlist:39LyZo1T7CceLqQxujIcEx Bang Bang
-    pyfy.play_playlist("spotify:playlist:39LyZo1T7CceLqQxujIcEx")
+    player.start_playback(context_uri="spotify:playlist:39LyZo1T7CceLqQxujIcEx")
     return redirect(url_for('hello'))
 
 
 @app.route('/test_album')
 def play_album():
     # spotify:album:6Yi4tnW7O7FUW9kK3bAUhT Play with Fire - The Reign of Kindo
-    pyfy.play_album("spotify:album:6Yi4tnW7O7FUW9kK3bAUhT")
+    player.start_playback(context_uri="spotify:album:6Yi4tnW7O7FUW9kK3bAUhT")
     return redirect(url_for('hello'))
-
-
-###############################
-### Helpers
-###############################
-def queue_playlist(playlist_id: str):
-    """queue all songs in a playlist"""
-    # TODO(Tom): Stress test this, no idea when this will get rate limited
-    r = pyfy.get_playlist(playlist_id)
-    songs = []
-    current_page = r.json()['tracks']
-    while current_page:
-        for track in current_page['items']:
-            songs.append(track['track']['uri'])
-        current_page = current_page['next']
-    for song in songs:
-        pyfy.queue_song(song)
