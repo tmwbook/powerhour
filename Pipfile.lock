@@ -1,12 +1,10 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "0b4a2fd54afebdbc8192415328114b3c0bc93bd022d07585bd116d76ec8aae3a"
+            "sha256": "7b3fc0122c241d4b2069ad5d5931e6c64bf3c57feecb4dbafde804df888151c7"
         },
         "pipfile-spec": 6,
-        "requires": {
-            "python_version": "3.8"
-        },
+        "requires": {},
         "sources": [
             {
                 "name": "pypi",
@@ -142,7 +140,7 @@
         "pyfy": {
             "editable": true,
             "git": "https://github.com/tmwbook/pyfy",
-            "ref": "4e0a1c514ea41ab58c9a26d8d2bca96351410315"
+            "ref": "974950ddd101f7d2828b68cceffcad4684e3e356"
         },
         "requests": {
             "hashes": [

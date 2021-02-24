@@ -2,13 +2,13 @@ from urllib.parse import urlencode
 
 from flask import Flask, redirect, render_template, request, url_for, wrappers
 from flask_login import LoginManager, current_user, login_required, login_user
-from pyfy.api_utils import (API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT,
-                            TokenManager)
-from pyfy.wrappers import player, playlists
 from requests import get, post
 
 from db import User, db
 from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
+from pyfy.api_utils import (API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT,
+                            TokenManager)
+from pyfy.wrappers import player, playlists
 from web_utils import (failed_api_call, query_active_token,
                        query_refresh_token, store_refreshed_token)
 
@@ -39,36 +39,6 @@ TokenManager.initialize(
 ###############################
 ### Spotify API Auth helpers
 ###############################
-
-def get_auth_url(scopes=None):
-    if not scopes:
-        scopes = []
-    params = {
-        "client_id": CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": REDIRECT_URL,
-    }
-    if scopes:
-        params['scope'] = " ".join(scopes)
-    return OAUTH_ENDPOINT+"?"+urlencode(params)
-
-
-def get_tokens(code):
-    """Gets the refresh and access tokens from spotify"""
-    params = {
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": REDIRECT_URL,
-        "client_id": CLIENT_ID,
-        "client_secret": CLIENT_SECRET,
-    }
-    r = post(TOKEN_ENDPOINT, data=params)
-    if r.status_code is 200:
-        # We should now have a response with the tokens
-        return r.json()
-    # If we get here then we have failed
-    return redirect(url_for('/'))
-
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -123,7 +93,7 @@ def hello():
 @app.route('/playlists')
 @login_required
 def get_playlists():
-    r = playlists.get_playlists(limit=50, offset=0)
+    r = playlists.get_playlists()
     return render_template('result.html', data=r.json())
 
 
