@@ -142,7 +142,7 @@
         "pyfy": {
             "editable": true,
             "git": "https://github.com/tmwbook/pyfy",
-            "ref": "cecde2e15158abfb19e13533963b295c113a56dd"
+            "ref": "4e0a1c514ea41ab58c9a26d8d2bca96351410315"
         },
         "requests": {
             "hashes": [
