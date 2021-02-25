@@ -2,17 +2,22 @@ from urllib.parse import urlencode
 
 from flask import Flask, redirect, render_template, request, url_for, wrappers
 from flask_login import LoginManager, current_user, login_required, login_user
-from requests import get, post
-
-from db import User, db
-from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES
 from pyfy.api_utils import (API_BASE, OAUTH_ENDPOINT, TOKEN_ENDPOINT,
                             TokenManager)
 from pyfy.wrappers import player, playlists
+from requests import get, post
+
+from db import User, db
+from env import APP_SECRET, CLIENT_ID, CLIENT_SECRET, DEV, REDIRECT_URL, SCOPES
 from web_utils import (failed_api_call, query_active_token,
                        query_refresh_token, store_refreshed_token)
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="powerhour-fe/build/")
+
+if DEV:
+    from flask_cors import CORS
+    CORS(app)
+
 # :///rel/path OR :////abs/path
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database'
 app.secret_key = APP_SECRET
@@ -81,20 +86,22 @@ def index():
             True
         ),
     }
-    return render_template('index.html', **context)
+    if DEV:
+        return redirect("http://localhost:3001")
+    return app.send_static_file('index.html')
 
 
 @app.route('/hello')
 @login_required
 def hello():
-    return render_template('result.html', data=current_user.__dict__)
+    return {"data": repr(current_user.__dict__)}, 200
 
 
 @app.route('/playlists')
 @login_required
 def get_playlists():
     r = playlists.get_playlists()
-    return render_template('result.html', data=r.json())
+    return r.json(), 200
 
 
 @app.route('/test')
@@ -105,9 +112,14 @@ def play_music():
     return redirect(url_for('hello'))
 
 
-@app.route('/test_playlist')
+@app.route('/test_playlist', methods=['POST'])
 @login_required
 def play_playlist():
+    if request.method == "POST":
+        if (data := request.get_json()) is None:
+            return {"error": "expected JSON"}, 200
+        r = player.start_playback(context_uri=data.get("playlist_id"))
+        return "", 200
     # spotify:playlist:39LyZo1T7CceLqQxujIcEx Bang Bang
     player.start_playback(context_uri="spotify:playlist:39LyZo1T7CceLqQxujIcEx")
     return redirect(url_for('hello'))
@@ -118,3 +130,12 @@ def play_album():
     # spotify:album:6Yi4tnW7O7FUW9kK3bAUhT Play with Fire - The Reign of Kindo
     player.start_playback(context_uri="spotify:album:6Yi4tnW7O7FUW9kK3bAUhT")
     return redirect(url_for('hello'))
+
+@app.route('/check_auth')
+@login_required
+def check_auth():
+    return "", 200
+
+@app.route('/get_auth_url')
+def get_auth_url():
+    return {"url": TokenManager.get_instance().gen_auth_url("http://localhost:3000/login/result", SCOPES)}
