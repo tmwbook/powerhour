@@ -1,8 +1,8 @@
-import React, { Dispatch, useEffect, useState } from 'react';
-import logo from './logo.svg';
-import './site.css';
 import axios from 'axios';
+import React, { Dispatch, SetStateAction, useEffect, useState } from 'react';
+import TimeKeeper from "react-timekeeper";
 import { Button, Card, Column, Columns, Container, Content, Image, Media } from "trunx";
+import './site.css';
 
 const authed_axios = axios.create({
   withCredentials: true
@@ -29,6 +29,7 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [authURL, setAuthURL] = useState("");
   const [playlists, setPlaylists]: [Playlist[], Dispatch<any>] = useState([]);
+  const [time, setTime]: [string, Dispatch<SetStateAction<string>>] = useState("17:00");
 
   const get_auth_url = function () {
     return axios.get("/get_auth_url")
@@ -46,6 +47,14 @@ function App() {
 
   const play_playlist = function (playlist_id:string) {
     authed_axios.post("/test_playlist", {playlist_id: playlist_id})
+  }
+
+  const schedule_playlist = function (playlist_id:string) {
+    authed_axios.post("/schedule_playlist", {
+      time: time,
+      playlist_id: playlist_id,
+      offset: new Date().getTimezoneOffset()
+    })
   }
 
   useEffect(() => {
@@ -69,6 +78,7 @@ function App() {
           </a>
         }</Container>
         <Container>
+          <TimeKeeper time={time} onChange={(data) => setTime(data.formatted24)} />
           <Columns className="is-multiline">
           { playlists.map((playlist: Playlist) => 
             <Column className="is-one-third" key={playlist.id}>
@@ -86,7 +96,9 @@ function App() {
                   }}>
                     Play Now
                   </Card.Footer.Item>
-                  <Card.Footer.Item>
+                  <Card.Footer.Item onClick={() => {
+                    schedule_playlist(playlist.uri)
+                  }}>
                     Schedule
                   </Card.Footer.Item>
                 </Card.Footer>
