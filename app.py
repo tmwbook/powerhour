@@ -84,7 +84,7 @@ def auth_result():
         db.session.add(local_user)
     db.session.commit()
     login_user(local_user)
-    return redirect(url_for('hello'))
+    return redirect(url_for('index'))
 
 
 ###############################
@@ -92,6 +92,8 @@ def auth_result():
 ###############################
 @app.route('/')
 def index():
+    if DEV:
+        return redirect("http://localhost:3001")
     if current_user.is_authenticated:
         return redirect(url_for('hello'))
     context = {
@@ -101,8 +103,6 @@ def index():
             True
         ),
     }
-    if DEV:
-        return redirect("http://localhost:3001")
     return app.send_static_file('index.html')
 
 

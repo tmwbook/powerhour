@@ -13,13 +13,13 @@ def query_active_token():
 
 def query_refresh_token():
     if (user := current_user) == None:
-        user = User.query.filter_by(id=scheduled_events[0].user_id).first()
+        user = User.query.filter_by(id=scheduled_events[0][1].user_id).first()
     return user.refresh_token
 
 
 def store_refreshed_token(new_tkn):
     if (user := current_user) == None:
-        user = User.query.filter_by(id=scheduled_events[0].user_id).first()
+        user = User.query.filter_by(id=scheduled_events[0][1].user_id).first()
     user.access_token = new_tkn
     db.session.commit()
 

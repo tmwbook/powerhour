@@ -62,8 +62,11 @@ function App() {
     .then((resp) => {
       setLoggedIn(resp.status === 200)
     })
-    get_auth_url()
-    .then(url => setAuthURL(url))
+    .catch(() => {
+      setLoggedIn(false);
+      get_auth_url()
+      .then(url => setAuthURL(url))
+    })
   }, [])
 
   return (
@@ -78,7 +81,7 @@ function App() {
           </a>
         }</Container>
         <Container>
-          <TimeKeeper time={time} onChange={(data) => setTime(data.formatted24)} />
+          { loggedIn && <TimeKeeper time={time} onChange={(data) => setTime(data.formatted24)} />}
           <Columns className="is-multiline">
           { playlists.map((playlist: Playlist) => 
             <Column className="is-one-third" key={playlist.id}>
